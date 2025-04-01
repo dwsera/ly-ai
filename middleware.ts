@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export function middleware(req: NextRequest) {
-  const token = req.cookies.get("next-auth.session-token")?.value;
-  console.log("Middleware - Path:", req.nextUrl.pathname, "Token:", token); // 添加调试日志
+export async function middleware(req: NextRequest) {
+  // 使用 getToken 获取会话
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  console.log("Middleware - Path:", req.nextUrl.pathname, "Token:", token);
 
   const protectedRoutes = ["/create", "/", "/cc", "/reply", "/dashboard/:path*", "/jg", "/xhs"];
 

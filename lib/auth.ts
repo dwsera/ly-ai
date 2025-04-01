@@ -34,7 +34,7 @@ export const authOptions: AuthOptions = {
   pages: { signIn: '/login' },
   session: {
     strategy: 'jwt',
-    maxAge: 1 * 24 * 60 * 60, // 1 天
+    maxAge: 1 * 24 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -57,7 +57,18 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   events: {
     async signIn({ user }) {
-      console.log("User signed in:", user); // 调试登录事件
+      console.log("User signed in:", user);
+    },
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production', // 生产环境使用 Secure
+      },
     },
   },
 };
