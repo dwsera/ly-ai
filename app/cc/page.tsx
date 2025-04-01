@@ -136,7 +136,7 @@ const Home = () => {
       )}
 
       {/* 我的行程 */}
-      <h1 className="text-3xl font-bold">我的行程</h1>
+      <h1 className="text-3xl font-bold">景点推荐</h1>
       {loading ? (
         <p className="text-center text-gray-500 mt-8">加载行程数据中...</p>
       ) : itineraries.length > 0 ? (
