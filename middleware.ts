@@ -1,38 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// 中间件保护受保护的路由
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get("next-auth.session-token")?.value; // 获取 JWT token
+  const token = req.cookies.get("next-auth.session-token")?.value;
+  console.log("Middleware - Path:", req.nextUrl.pathname, "Token:", token); // 添加调试日志
 
-  // 需要保护的页面路径
-  const protectedRoutes = [
-    "/create",
-    "/",
-    "/cc",
-    "/reply",
-    "/dashboard/:path*",
-    "/jg",
-    "/xhs",
-  ];
-  // const protectedRoutes = [""];
+  const protectedRoutes = ["/create", "/", "/cc", "/reply", "/dashboard/:path*", "/jg", "/xhs"];
 
   if (protectedRoutes.includes(req.nextUrl.pathname) && !token) {
-    return NextResponse.redirect(new URL("/login", req.url)); // 如果没有 token 则重定向到登录页面
+    console.log("Middleware - Redirecting to /login");
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return NextResponse.next(); // 如果有 token，继续请求
+  return NextResponse.next();
 }
 
-// 只对受保护的页面生效
 export const config = {
-  matcher: [
-    "/create",
-    "/",
-    "/cc",
-    "/reply",
-    "/dashboard/:path*",
-    "/jg",
-    "/xhs",
-  ],
-  // matcher: [],
+  matcher: ["/create", "/", "/cc", "/reply", "/dashboard/:path*", "/jg", "/xhs"],
 };

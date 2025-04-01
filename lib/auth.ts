@@ -1,4 +1,3 @@
-// lib/auth.ts
 import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaClient } from '@prisma/client';
@@ -18,27 +17,21 @@ export const authOptions: AuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('邮箱和密码不能为空');
         }
-
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
-
         if (!user) {
           throw new Error('用户名错误');
         }
-
         const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordCorrect) {
           throw new Error('密码错误');
         }
-
         return { id: user.id, email: user.email, username: user.username };
       },
     }),
   ],
-  pages: {
-    signIn: '/login',
-  },
+  pages: { signIn: '/login' },
   session: {
     strategy: 'jwt',
     maxAge: 1 * 24 * 60 * 60, // 1 天
@@ -54,7 +47,7 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string; // 类型断言，确保类型安全
+        session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.username = token.username as string;
       }
@@ -62,4 +55,9 @@ export const authOptions: AuthOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  events: {
+    async signIn({ user }) {
+      console.log("User signed in:", user); // 调试登录事件
+    },
+  },
 };
