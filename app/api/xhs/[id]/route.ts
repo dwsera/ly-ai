@@ -16,9 +16,9 @@ interface XhsApiResponse {
 }
 
 // GET 请求：获取特定 XhsNote 数据
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, context: { params: { id: string } }) {
   try {
-    const { id } = params;
+    const { id } = context.params; // 从 context 中获取 id
 
     // 从数据库中查找 XhsNote
     const xhsNote = await prisma.xhsNote.findUnique({
@@ -50,10 +50,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-// DELETE 请求：删除特定 XhsNote 数据
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+// DELETE 请求：删除V特定 XhsNote 数据
+export async function DELETE(req: Request, context: { params: { id: string } }) {
   try {
-    const { id } = params;
+    const { id } = context.params; // 从 context 中获取 id
 
     // 检查笔记是否存在
     const xhsNote = await prisma.xhsNote.findUnique({
