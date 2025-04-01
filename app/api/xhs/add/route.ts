@@ -40,7 +40,7 @@ interface XhsApiResponse {
   body: string;
   images: string[];
   ocrTexts: string[];
-  jsonBody: string;
+  jsonBody: any; // 可以根据实际 JSON 结构定义更具体的类型
 }
 
 export async function POST(req: Request) {
