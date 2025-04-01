@@ -1,8 +1,9 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation"; // 引入 useRouter
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // 引入 useSession
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -10,7 +11,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // 使用 useRouter
+  const router = useRouter();
+  const { data: session, status } = useSession(); // 获取会话状态
+
+  // 登录成功后检查会话状态
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/cc");
+      router.refresh();
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +36,10 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false, // 禁用 NextAuth 的自动重定向
+        redirect: false,
       });
+
+      console.log("SignIn result:", result);
 
       if (result?.error) {
         switch (result.error) {
@@ -43,13 +55,10 @@ export default function LoginPage() {
           default:
             setError("登录失败，请稍后再试");
         }
-      } else {
-        router.push("/cc"); // 使用 router.push 跳转
-        router.refresh(); // 刷新页面以确保会话状态同步
+        setLoading(false);
       }
     } catch (err) {
       setError("网络错误，请检查连接后重试");
-    } finally {
       setLoading(false);
     }
   };
