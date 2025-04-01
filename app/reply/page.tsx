@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,48 +14,68 @@ interface Message {
 }
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem("travelMessages");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
-
-    const userMessage: Message = { role: "user", content: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`请求失败，状态码: ${response.status}`);
+  // 在客户端加载时读取 localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("travelMessages");
+      if (saved) {
+        setMessages(JSON.parse(saved));
       }
-
-      const data = await response.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.response || "⚠️ AI 目前无法提供建议，请稍后再试。" },
-      ]);
-    } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ AI 访问失败，请稍后再试。" },
-      ]);
-    } finally {
-      setLoading(false);
     }
-  }, [input, messages, loading]);
+  }, []);
+
+  // 每次 messages 更新时保存到 localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("travelMessages", JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!input.trim() || loading) return;
+
+      const userMessage: Message = { role: "user", content: input.trim() };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput("");
+      setLoading(true);
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [...messages, userMessage] }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`请求失败，状态码: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: data.response || "⚠️ AI 目前无法提供建议，请稍后再试。",
+          },
+        ]);
+      } catch (err: any) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "⚠️ AI 访问失败，请稍后再试。" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [input, messages, loading]
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-teal-900">
@@ -100,7 +120,9 @@ export default function Home() {
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-slide-up`}
+                    className={`flex ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    } animate-slide-up`}
                   >
                     <div
                       className={`rounded-xl px-4 py-3 max-w-[75%] shadow-sm transition-all ${
@@ -111,7 +133,9 @@ export default function Home() {
                     >
                       <ReactMarkdown
                         components={{
-                          p: ({ children }) => <p className="leading-relaxed">{children}</p>,
+                          p: ({ children }) => (
+                            <p className="leading-relaxed">{children}</p>
+                          ),
                         }}
                       >
                         {message.content}
@@ -124,7 +148,9 @@ export default function Home() {
                   <div className="flex justify-start animate-fade-in">
                     <div className="rounded-xl bg-gray-200 dark:bg-gray-700 px-4 py-3 flex items-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-teal-400" />
-                      <span className="text-gray-700 dark:text-gray-200">正在为您规划行程...</span>
+                      <span className="text-gray-700 dark:text-gray-200">
+                        正在为您规划行程...
+                      </span>
                     </div>
                   </div>
                 )}

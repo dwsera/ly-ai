@@ -46,6 +46,7 @@ const getRecommendedPlacesFromXunfei = async (
               role: "user",
               content: `请为我在${city}规划一个${days}天的旅行攻略，推荐与"${keyword}"相关的热门景点。
                 1-2天：每天4个左右景点，3天，可以3个左右。
+                直接返回以下格式的 JSON 字符串，不要包含任何多余的文本、Markdown 标记或其他内容。
                 格式：
                 [
                   { "day": 1, "places": [{ "name": "景点A", "description": "简短描述" },

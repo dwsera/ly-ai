@@ -6,6 +6,7 @@ import { useXhsStore } from "@/app/store/useXhsStore";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import pLimit from "p-limit";
+import { Suspense } from "react"; // 引入 Suspense
 
 const AMAP_API_KEY = process.env.NEXT_PUBLIC_AMAP_API_KEY;
 const MapComponent = dynamic(() => import("../../components/MapComponent"), { ssr: false });
@@ -22,35 +23,8 @@ interface DayData {
   places: Place[];
 }
 
-const coordinatesCache: { [key: string]: [number, number] } = {};
-const limit = pLimit(3);
-
-async function getCoordinates(placeName: string, city: string, retries = 3): Promise<[number, number] | null> {
-  const fullPlaceName = `${city}${placeName}`;
-  if (coordinatesCache[fullPlaceName]) return coordinatesCache[fullPlaceName];
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const response = await fetch(
-        `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(fullPlaceName)}&key=${AMAP_API_KEY}`
-      );
-      const data = await response.json();
-      if (data.status === "1" && data.geocodes && data.geocodes.length > 0) {
-        const location = data.geocodes[0].location.split(",");
-        const coords: [number, number] = [parseFloat(location[1]), parseFloat(location[0])];
-        coordinatesCache[fullPlaceName] = coords;
-        return coords;
-      }
-      throw new Error(`无法找到 ${fullPlaceName} 的经纬度`);
-    } catch (error) {
-      if (attempt === retries) return null;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-  }
-  return null;
-}
-
-export default function XhsDd() {
+// 将主要逻辑抽取到一个单独的组件
+function XhsDdContent() {
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [placesWithCoordinates, setPlacesWithCoordinates] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +39,6 @@ export default function XhsDd() {
   // 从 store 或数据库加载数据
   useEffect(() => {
     if (!data && noteId) {
-      // 如果 store 中没有数据，从 API 获取
       fetch(`/api/xhs/${noteId}`).then(async (res) => {
         const noteData = await res.json();
         if (noteData) useXhsStore.getState().setData(noteData);
@@ -76,7 +49,9 @@ export default function XhsDd() {
   // 解析数据
   if (data?.jsonBody) {
     try {
-      const parsedData = typeof data.jsonBody === "string" ? JSON.parse(data.jsonBody.replace(/```json/g, "").replace(/```/g, "").trim()) : data.jsonBody;
+      const parsedData = typeof data.jsonBody === "string" 
+        ? JSON.parse(data.jsonBody.replace(/```json/g, "").replace(/```/g, "").trim()) 
+        : data.jsonBody;
       city = parsedData.city || "珠海";
       jsonBodyArray = parsedData.data.map((item: { day: any; places: any[] }) => ({
         ...item,
@@ -86,6 +61,34 @@ export default function XhsDd() {
     } catch (error) {
       console.error("JSON 解析错误:", error);
     }
+  }
+
+  const coordinatesCache: { [key: string]: [number, number] } = {};
+  const limit = pLimit(3);
+
+  async function getCoordinates(placeName: string, city: string, retries = 3): Promise<[number, number] | null> {
+    const fullPlaceName = `${city}${placeName}`;
+    if (coordinatesCache[fullPlaceName]) return coordinatesCache[fullPlaceName];
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(
+          `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(fullPlaceName)}&key=${AMAP_API_KEY}`
+        );
+        const data = await response.json();
+        if (data.status === "1" && data.geocodes && data.geocodes.length > 0) {
+          const location = data.geocodes[0].location.split(",");
+          const coords: [number, number] = [parseFloat(location[1]), parseFloat(location[0])];
+          coordinatesCache[fullPlaceName] = coords;
+          return coords;
+        }
+        throw new Error(`无法找到 ${fullPlaceName} 的经纬度`);
+      } catch (error) {
+        if (attempt === retries) return null;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+    return null;
   }
 
   const handleDayClick = async (day: number) => {
@@ -186,5 +189,14 @@ export default function XhsDd() {
         </div>
       </div>
     </main>
+  );
+}
+
+// 默认导出的页面组件，包裹 Suspense
+export default function XhsDd() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen">加载中...</div>}>
+      <XhsDdContent />
+    </Suspense>
   );
 }

@@ -83,7 +83,7 @@ const XhsParser = () => {
               disabled={loading}
             />
             <label htmlFor="forceOcr" className="text-gray-700 text-sm">
-              如何识别解析的不一致，请勾选这个，不够识别会有点久
+              如果刚刚解析的内容不一致，请勾选这个，不够识别会有点久哦
             </label>
           </div>
 
