@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth"; // 修改为正确的路径
-export const runtime = 'edge';  // 启用边缘运行时
 const prisma = new PrismaClient();
 
 export async function DELETE(req: Request) {

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-export const runtime = 'edge';  // 启用边缘运行时
 // 定义响应数据接口
 interface XhsApiResponse {
   id: string;

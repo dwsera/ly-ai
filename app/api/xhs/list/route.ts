@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-export const runtime = 'edge';  // 启用边缘运行时
 const prisma = new PrismaClient();
 
 interface XhsNoteResponse {

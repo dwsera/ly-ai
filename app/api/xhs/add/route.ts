@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import fetch from "node-fetch";
 import { PrismaClient } from "@prisma/client";
-export const runtime = 'edge';  // 启用边缘运行时
 const prisma = new PrismaClient();
 const APIPassword = process.env.APIPassword;
 
