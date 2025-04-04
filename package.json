@@ -2,13 +2,13 @@
   "name": "q",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+"scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "pages:build": "next build && next-on-pages",
+    "build": "prisma generate && next build", 
+    "pages:build": "npx @cloudflare/next-on-pages", 
     "start": "next start",
-    "preview": "npm run pages:build && wrangler pages dev",
-    "deploy": "npm run pages:build && wrangler pages deploy",
+    "preview": "npx @cloudflare/next-on-pages --watch",
+    "deploy": "npx @cloudflare/next-on-pages && wrangler pages deploy", 
     "lint": "next lint"
   },
   "dependencies": {
