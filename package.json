@@ -11,6 +11,9 @@
     "deploy": "npx @cloudflare/next-on-pages && wrangler pages deploy", 
     "lint": "next lint"
   },
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
     "@prisma/client": "^6.4.1",
