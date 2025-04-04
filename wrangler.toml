@@ -2,3 +2,6 @@ name = "ly-ai"
 compatibility_date = "2025-04-04"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
+
+[env.production]
+node_version = "18.18.0"
