@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-
+export const runtime = 'edge';  // 启用边缘运行时
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();

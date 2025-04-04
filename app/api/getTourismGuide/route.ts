@@ -10,7 +10,7 @@ const AMAP_API_KEY = process.env.AMAP_API_KEY;
 const APIPassword = process.env.APIPassword;
 const IMAGE_API_ID = process.env.IMAGE_API_ID;
 const IMAGE_API_KEY = process.env.IMAGE_API_KEY;
-
+export const runtime = 'edge';  // 启用边缘运行时
 interface Place {
   name: string;
   description: string;

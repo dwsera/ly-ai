@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { Resend } from "resend";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
-
+export const runtime = 'edge';  // 启用边缘运行时
 const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
