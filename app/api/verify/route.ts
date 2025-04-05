@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { Resend } from "resend";
 import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
+
 
 // 用于生成验证码
 function generateVerificationCode() {
@@ -14,6 +16,9 @@ export async function POST(req: NextRequest) {
   if (!email || !password || !username || !code) {
     return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
   }
+
+  // ✅ 在这里初始化 Resend，避免构建时报错
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     // 1. 验证验证码是否正确
@@ -30,7 +35,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "验证码无效或已过期" }, { status: 400 });
     }
 
-    // 2. 删除已验证的验证码记录
     await prisma.verificationToken.delete({
       where: {
         identifier_token: {
@@ -40,7 +44,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 3. 创建用户，首先需要加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.create({
