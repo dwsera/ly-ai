@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-
+export const runtime = 'edge';
 const prisma = new PrismaClient();
 // 定义响应数据接口
 interface XhsApiResponse {

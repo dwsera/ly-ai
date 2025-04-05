@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const APIPassword = process.env.APIPassword;
-
+export const runtime = 'edge';
 function extractXhsUrl(text: string): string | null {
   const exploreUrlPattern = /(https:\/\/www\.xiaohongshu\.com\/explore\/[a-zA-Z0-9]+[^\s,，。！]*)/;
   let match = text.match(exploreUrlPattern);

@@ -4,7 +4,7 @@ import { Resend } from "resend";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
-
+export const runtime = 'edge';
 export async function POST(req: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { email, username, password } = await req.json();

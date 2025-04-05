@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth"; // 修改为正确的路径
 const prisma = new PrismaClient();
-
+export const runtime = 'edge';
 const IFLYTEK_API_KEY = process.env.IFLYTEK_API_KEY;
 const IFLYTEK_API_SECRET = process.env.IFLYTEK_API_SECRET;
 const AMAP_API_KEY = process.env.AMAP_API_KEY;

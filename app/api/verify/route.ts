@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { Resend } from "resend";
 import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
-
+export const runtime = 'edge';
 
 // 用于生成验证码
 function generateVerificationCode() {
