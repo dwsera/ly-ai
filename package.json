@@ -2,13 +2,13 @@
   "name": "q",
   "version": "0.1.0",
   "private": true,
-"scripts": {
+  "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build", 
-    "pages:build": "npx @cloudflare/next-on-pages", 
+    "build": "prisma generate && next build",
+    "pages:build": "npx @cloudflare/next-on-pages",
     "start": "next start",
     "preview": "npx @cloudflare/next-on-pages --watch",
-    "deploy": "npx @cloudflare/next-on-pages && wrangler pages deploy", 
+    "deploy": "npx @cloudflare/next-on-pages && wrangler pages deploy",
     "lint": "next lint"
   },
   "engines": {
@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
+    "@libsql/client": "^0.8.1",
+    "@prisma/adapter-libsql": "^6.5.0",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-avatar": "^1.1.3",
     "@radix-ui/react-checkbox": "^1.1.4",
@@ -32,9 +34,8 @@
     "lucide-react": "^0.475.0",
     "mysql2": "^3.12.0",
     "next": "^15.1.6",
-    "next-auth": "^4.24.11",
+    "next-auth": "^5.0.0-beta.25",
     "node-cache": "^5.1.2",
-    "node-fetch": "^3.3.2",
     "p-limit": "^6.2.0",
     "prisma": "^6.4.1",
     "react": "^19.0.0",

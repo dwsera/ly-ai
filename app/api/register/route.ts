@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/edge"; // 使用 Edge 版本的 Prisma
 import { Resend } from "resend";
-import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
+
 const prisma = new PrismaClient();
 export const runtime = 'edge';
+
 export async function POST(req: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { email, username, password } = await req.json();
@@ -44,9 +45,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 生成验证码
-    const verificationCode = randomBytes(3).toString("hex"); // 生成 6 位验证码
+    // 使用 Web Crypto API 生成 6 位验证码
+    const array = crypto.getRandomValues(new Uint8Array(3)); // 3 字节 = 6 位十六进制
+    const verificationCode = Array.from(array)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join(''); // 生成类似 "1a2b3c" 的验证码
     const expires = new Date(Date.now() + 10 * 60 * 1000); // 验证码有效期10分钟
+
     console.log("收到请求:", { email, username, password });
     console.log("生成的验证码:", verificationCode);
 

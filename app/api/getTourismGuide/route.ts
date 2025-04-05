@@ -1,15 +1,17 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import { PrismaClient } from "@prisma/client";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth"; // 修改为正确的路径
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client/edge"; // 使用 Edge 兼容版本
+import { auth } from "@/lib/auth"; // 从你的 auth 配置中导入
+
 const prisma = new PrismaClient();
-export const runtime = 'edge';
+export const runtime = "edge";
+
 const IFLYTEK_API_KEY = process.env.IFLYTEK_API_KEY;
 const IFLYTEK_API_SECRET = process.env.IFLYTEK_API_SECRET;
 const AMAP_API_KEY = process.env.AMAP_API_KEY;
 const APIPassword = process.env.APIPassword;
 const IMAGE_API_ID = process.env.IMAGE_API_ID;
 const IMAGE_API_KEY = process.env.IMAGE_API_KEY;
+
 interface Place {
   name: string;
   description: string;
@@ -58,7 +60,6 @@ const getRecommendedPlacesFromXunfei = async (
       }
     );
 
-    // 检查响应状态
     if (!response.ok) {
       throw new Error(`讯飞 API 请求失败，状态码: ${response.status}`);
     }
@@ -66,7 +67,6 @@ const getRecommendedPlacesFromXunfei = async (
     const data = await response.json();
     console.log("讯飞星火完整响应:", data);
 
-    // 检查响应数据是否有效
     if (!data || !data.choices || !data.choices[0]?.message?.content) {
       throw new Error("讯飞 API 返回的数据无效或为空");
     }
@@ -143,7 +143,6 @@ const fetchPlaceImage = async (
       });
       clearTimeout(id);
 
-      // 检查响应状态
       if (!response.ok) {
         throw new Error(`请求失败，状态码: ${response.status}`);
       }
@@ -186,18 +185,16 @@ const fetchPlaceImage = async (
   return "/default.jpg";
 };
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const city = url.searchParams.get("city");
   let keyword = url.searchParams.get("keyword") || "";
   const days = Math.max(parseInt(url.searchParams.get("days") || "1", 10), 1);
 
-  // 从 session 获取用户信息
-  const session = await getServerSession(authOptions);
+  // 从 auth 获取会话
+  const session = await auth();
   if (!session || !session.user?.id) {
-    return new Response(JSON.stringify({ message: "未登录或会话无效" }), {
-      status: 401,
-    });
+    return NextResponse.json({ message: "未登录或会话无效" }, { status: 401 });
   }
   const userId = session.user.id;
 
@@ -206,9 +203,7 @@ export async function GET(req: Request) {
   }
 
   if (!city || !AMAP_API_KEY || !IFLYTEK_API_KEY || !IFLYTEK_API_SECRET) {
-    return new Response(JSON.stringify({ message: "城市名称或API密钥无效" }), {
-      status: 400,
-    });
+    return NextResponse.json({ message: "城市名称或API密钥无效" }, { status: 400 });
   }
 
   try {
@@ -216,22 +211,18 @@ export async function GET(req: Request) {
       where: { id: userId },
     });
     if (!user) {
-      return new Response(JSON.stringify({ message: "用户不存在" }), {
-        status: 404,
-      });
+      return NextResponse.json({ message: "用户不存在" }, { status: 404 });
     }
 
-    // 检查用户已有的总行程数量
     const totalItineraries = await prisma.itinerary.count({
       where: { userId },
     });
 
     if (totalItineraries >= 9) {
-      return new Response(
-        JSON.stringify({
-          message:
-            "您已达到6个行程的上限，无法添加新行程,请去我的行程中删除行程",
-        }),
+      return NextResponse.json(
+        {
+          message: "您已达到6个行程的上限，无法添加新行程,请去我的行程中删除行程",
+        },
         { status: 403 }
       );
     }
@@ -262,17 +253,17 @@ export async function GET(req: Request) {
 
     console.log(`最终返回的行程天数: ${updatedItinerary.length}`);
 
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         id: savedItinerary.id,
         city,
         schedule: updatedItinerary,
         generatedAt: savedItinerary.generatedAt.toISOString(),
-      }),
+      },
       {
         status: 200,
         headers: {
-          "Content-Type": "application/json", // 确保 Content-Type 是 JSON
+          "Content-Type": "application/json",
           "Cache-Control":
             "no-store, no-cache, must-revalidate, proxy-revalidate",
         },
@@ -280,38 +271,29 @@ export async function GET(req: Request) {
     );
   } catch (error) {
     console.error("生成旅游攻略失败:", error);
-    return new Response(
-      JSON.stringify({
-        message: "生成旅游攻略失败",
-        error: error || String(error),
-      }),
+    return NextResponse.json(
       {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json", // 确保 Content-Type 是 JSON
-        },
-      }
+        message: "生成旅游攻略失败",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
     );
   } finally {
     await prisma.$disconnect();
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const { id, city, schedule } = await req.json();
 
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || !session.user?.id) {
-    return new Response(JSON.stringify({ message: "未登录或会话无效" }), {
-      status: 401,
-    });
+    return NextResponse.json({ message: "未登录或会话无效" }, { status: 401 });
   }
   const userId = session.user.id;
 
   if (!id) {
-    return new Response(JSON.stringify({ message: "缺少行程ID" }), {
-      status: 400,
-    });
+    return NextResponse.json({ message: "缺少行程ID" }, { status: 400 });
   }
 
   try {
@@ -324,19 +306,22 @@ export async function POST(req: Request) {
       },
     });
 
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         id: updatedItinerary.id,
         city: updatedItinerary.city,
         schedule: updatedItinerary.schedule,
         generatedAt: updatedItinerary.generatedAt.toISOString(),
-      }),
+      },
       { status: 200 }
     );
   } catch (error) {
     console.error("更新旅游攻略失败:", error);
-    return new Response(
-      JSON.stringify({ message: "更新旅游攻略失败", error: String(error) }),
+    return NextResponse.json(
+      {
+        message: "更新旅游攻略失败",
+        error: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   } finally {

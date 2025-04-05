@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import fetch from "node-fetch";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/edge"; // 使用 Edge 版本
+
 const prisma = new PrismaClient();
 const APIPassword = process.env.APIPassword;
 export const runtime = 'edge';
+
 function extractXhsUrl(text: string): string | null {
   const exploreUrlPattern = /(https:\/\/www\.xiaohongshu\.com\/explore\/[a-zA-Z0-9]+[^\s,，。！]*)/;
   let match = text.match(exploreUrlPattern);
@@ -39,7 +40,7 @@ interface XhsApiResponse {
   body: string;
   images: string[];
   ocrTexts: string[];
-  jsonBody: any; // 可以根据实际 JSON 结构定义更具体的类型
+  jsonBody: any;
 }
 
 export async function POST(req: Request) {
@@ -75,7 +76,6 @@ export async function POST(req: Request) {
     const { title, desc: body, images } = imageData.data;
 
     const ocrTexts: string[] = [];
-    // 根据 forceOcr 决定是否执行 OCR
     const shouldOcr = forceOcr || (images && images.length > 0 && shouldPerformOcr(body));
     if (shouldOcr) {
       for (const imageUrl of images) {
@@ -85,7 +85,11 @@ export async function POST(req: Request) {
           body: new URLSearchParams({ ocr_url: imageUrl }).toString(),
         });
         const ocrData: any = await ocrApiResponse.json();
-        ocrTexts.push(ocrData.status === "success" && ocrData.code === 200 ? ocrData.data.ParsedText || "OCR 未能识别文本" : "OCR 失败");
+        ocrTexts.push(
+          ocrData.status === "success" && ocrData.code === 200
+            ? ocrData.data.ParsedText || "OCR 未能识别文本"
+            : "OCR 失败"
+        );
       }
     }
 
@@ -164,7 +168,7 @@ export async function POST(req: Request) {
       body: xhsNote.body,
       images: xhsNote.images as string[],
       ocrTexts: (xhsNote.ocrTexts as string[]) || [],
-      jsonBody,
+      jsonBody: parsedJsonBody,
     };
 
     return NextResponse.json(responseData, { status: 200 });

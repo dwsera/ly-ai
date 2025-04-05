@@ -1,55 +1,63 @@
-import NextAuth, { AuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaClient } from "@prisma/client/edge";
+import bcrypt from "bcryptjs";
+import type { NextAuthConfig } from "next-auth";
 
 const prisma = new PrismaClient();
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('邮箱和密码不能为空');
+        const email = credentials?.email as string | undefined;
+        const password = credentials?.password as string | undefined;
+
+        if (!email || !password) {
+          throw new Error("邮箱和密码不能为空");
         }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
-        if (!user) {
-          throw new Error('用户名错误');
+
+        if (!user || !user.password) {
+          throw new Error("用户名错误");
         }
-        const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
-          throw new Error('密码错误');
+          throw new Error("密码错误");
         }
+
         return { id: user.id, email: user.email, username: user.username };
       },
     }),
   ],
-  pages: { signIn: '/login' },
+  pages: { signIn: "/login" },
   session: {
-    strategy: 'jwt',
-    maxAge: 1 * 24 * 60 * 60,
+    strategy: "jwt",
+    maxAge: 1 * 24 * 60 * 60, // 1 天
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.username = user.username;
+        token.id = user.id ?? ""; // 如果 undefined，则使用空字符串
+        token.email = user.email ?? "";
+        token.username = user.username ?? "";
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.username = token.username as string;
+        session.user.id = token.id ?? "";
+        session.user.email = token.email ?? "";
+        session.user.username = token.username ?? "";
       }
       return session;
     },
@@ -65,10 +73,31 @@ export const authOptions: AuthOptions = {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production', // 生产环境使用 Secure
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },
+  jwt: {
+    async encode({ secret, token }) {
+      const encoder = new TextEncoder();
+      const data = JSON.stringify(token);
+      return btoa(String.fromCharCode(...encoder.encode(data))); // Base64 编码
+    },
+    async decode({ secret, token }) {
+      if (!token) {
+        return null;
+      }
+      const decoder = new TextDecoder();
+      const binary = atob(token);
+      const uint8Array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        uint8Array[i] = binary.charCodeAt(i);
+      }
+      return JSON.parse(decoder.decode(uint8Array));
+    },
+  },
 };
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);

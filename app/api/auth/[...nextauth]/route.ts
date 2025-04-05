@@ -1,8 +1,14 @@
 // app/api/auth/[...nextauth]/route.ts
 
-import NextAuth from 'next-auth';
-import { authOptions } from '@/lib/auth'; // 从外部导入配置
-export const runtime = 'edge';
-const handler = NextAuth(authOptions);
+import { handlers } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
-export { handler as GET, handler as POST };
+export const runtime = "edge";
+
+export async function GET(req: NextRequest) {
+  return handlers.GET(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handlers.POST(req);
+}

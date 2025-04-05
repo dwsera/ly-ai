@@ -1,25 +1,20 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import { PrismaClient } from "@prisma/client";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth"; // 修改为正确的路径
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client/edge"; // 使用 Edge 兼容版本
+import { auth } from "@/lib/auth"; // 从你的 auth 配置中导入
+
 const prisma = new PrismaClient();
-export const runtime = 'edge';
-export async function DELETE(req: Request) {
+export const runtime = "edge";
+
+export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
 
-  const session = await getServerSession(authOptions);
+  const session = await auth(); // 使用 auth 获取会话
   if (!session || !session.user?.id) {
-    return new Response(
-      JSON.stringify({ message: "未登录或无权限访问" }),
-      { status: 401 }
-    );
+    return NextResponse.json({ message: "未登录或无权限访问" }, { status: 401 });
   }
 
   if (!id) {
-    return new Response(
-      JSON.stringify({ message: "缺少行程ID" }),
-      { status: 400 }
-    );
+    return NextResponse.json({ message: "缺少行程ID" }, { status: 400 });
   }
 
   try {
@@ -28,8 +23,8 @@ export async function DELETE(req: Request) {
     });
 
     if (!itinerary || itinerary.userId !== session.user.id) {
-      return new Response(
-        JSON.stringify({ message: "行程不存在或无权限删除" }),
+      return NextResponse.json(
+        { message: "行程不存在或无权限删除" },
         { status: 403 }
       );
     }
@@ -38,14 +33,14 @@ export async function DELETE(req: Request) {
       where: { id },
     });
 
-    return new Response(
-      JSON.stringify({ message: "行程删除成功" }),
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "行程删除成功" }, { status: 200 });
   } catch (error) {
     console.error("删除行程失败:", error);
-    return new Response(
-      JSON.stringify({ message: "删除行程失败", error: String(error) }),
+    return NextResponse.json(
+      {
+        message: "删除行程失败",
+        error: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   } finally {
